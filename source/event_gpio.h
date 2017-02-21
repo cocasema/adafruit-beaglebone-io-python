@@ -30,6 +30,8 @@ SOFTWARE.
 #ifndef EVENT_GPIO_H
 #define EVENT_GPIO_H
 
+#include "adafruit/bbio/error.h"
+
 #define NO_EDGE      0
 #define RISING_EDGE  1
 #define FALLING_EDGE 2

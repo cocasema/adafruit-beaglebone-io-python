@@ -30,12 +30,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "Python.h"
+#ifndef NO_PYTHON
+#  include "Python.h"
+#endif // !NO_PYTHON
+
+#include <errno.h>
 #include <dirent.h>
 #include <syslog.h>
-#include <time.h>
-#include <string.h>
 #include <glob.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
+
 #include "common.h"
 
 #ifdef BBBVERSION41
@@ -155,7 +161,7 @@ pins_t table[] = {
   { "DGND", "P9_44", 0, -1, -1},
   { "DGND", "P9_45", 0, -1, -1},
   { "DGND", "P9_46", 0, -1, -1},
-    { NULL, NULL, 0 }
+  { NULL, NULL, 0, 0, 0 }
 };
 
 typedef struct uart_t { 
@@ -172,7 +178,7 @@ uart_t uart_table[] = {
   { "UART3", "/dev/ttyO3", "ADAFRUIT-UART3", "P9_42", ""},
   { "UART4", "/dev/ttyO4", "ADAFRUIT-UART4", "P9_11", "P9_13"},
   { "UART5", "/dev/ttyO5", "ADAFRUIT-UART5", "P8_38", "P8_37"},
-  { NULL, NULL, 0 }
+  { NULL, NULL, 0, 0, 0 }
 };
 
 // Copied from https://github.com/jadonk/bonescript/blob/master/src/bone.js
@@ -442,7 +448,9 @@ BBIO_err load_device_tree(const char *name)
 
     file = fopen(slots, "r+");
     if (!file) {
+#ifndef NO_PYTHON
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
+#endif // !NO_PYTHON
         return BBIO_CAPE;
     }
 
@@ -483,7 +491,9 @@ int device_tree_loaded(const char *name)
 
     file = fopen(slots, "r+");
     if (!file) {
+#ifndef NO_PYTHON
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
+#endif // !NO_PYTHON
         return -1;
     }
 
@@ -517,7 +527,9 @@ BBIO_err unload_device_tree(const char *name)
     snprintf(slots, sizeof(slots), "%s/slots", ctrl_dir);
     file = fopen(slots, "r+");
     if (!file) {
+#ifndef NO_PYTHON
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
+#endif // !NO_PYTHON
         return BBIO_SYSFS;
     }
 

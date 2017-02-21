@@ -41,6 +41,9 @@ SOFTWARE.
 #endif
 
 #include "adafruit/bbio/error.h"
+#ifdef __cplusplus
+using adafruit::bbio::BBIO_err;
+#endif
 
 #define MODE_UNKNOWN -1
 #define BOARD        10
@@ -65,17 +68,17 @@ typedef struct pwm_t {
   const char *key;  // Pin name eg P9_21
 } pwm_t;
 
-int gpio_mode;
-int gpio_direction[120];
+extern int gpio_mode;
+extern int gpio_direction[120];
 
 #ifdef BBBVERSION41
-    char ctrl_dir[43];
-    char ocp_dir[33];
+  extern char ctrl_dir[43];
+  extern char ocp_dir[33];
 #else
-    char ctrl_dir[35];
-    char ocp_dir[25];
+  extern char ctrl_dir[35];
+  extern char ocp_dir[25];
 #endif
- 
+
 BBIO_err get_gpio_number(const char *key, unsigned int *gpio);
 BBIO_err get_pwm_key(const char *input, char *key);
 BBIO_err get_adc_ain(const char *key, int *ain);
@@ -90,7 +93,7 @@ BBIO_err get_pwm_by_key(const char *key, pwm_t **pwm);
 #define BBIO_LOG_OPTION LOG_CONS | LOG_PID | LOG_NDELAY
 void initlog(int level, const char* ident, int option);
 
-int setup_error;
-int module_setup;
+extern int setup_error;
+extern int module_setup;
 
 #endif

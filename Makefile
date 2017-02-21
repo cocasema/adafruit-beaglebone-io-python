@@ -7,7 +7,7 @@ time:
 publish: clean
 	python setup.py sdist upload
 
-clean:
+clean: cpp-clean
 	rm -rf Adafruit_BBIO.* build dist
 	rm -f *.pyo
 	rm -f *.egg
@@ -34,8 +34,37 @@ build3:
 install3: build3
 	python3 setup.py install --force
 
+configure: configure.ac
+	rm -f configure && \
+	autoreconf --install -I m4
+
+build/Makefile: configure
+	mkdir -p build && \
+	cd build && \
+	../configure
+
+cpp: build/Makefile
+	cd build && \
+	$(MAKE)
+
+cpp-clean:
+	rm -rf \
+	 aclocal.m4 \
+	 autom4te.cache/ \
+	 build/ \
+	 config.h.in \
+	 configure \
+	 Makefile.in \
+	 source/Makefile.in \
+	 m4/libtool.m4 \
+	 m4/lt~obsolete.m4 \
+	 m4/ltoptions.m4 \
+	 m4/ltsugar.m4 \
+	 m4/ltversion.m4
+
 .PHONY: all clean
 .PHONY: tests
 .PHONY: build  install
 .PHONY: build2 install2
 .PHONY: build3 install3
+.PHONY: cpp cpp-clean
