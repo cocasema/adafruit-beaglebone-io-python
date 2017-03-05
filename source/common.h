@@ -33,6 +33,13 @@ SOFTWARE.
 
 #include <stddef.h>
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0)
+#  ifndef BBBVERSION41
+#    define BBBVERSION41
+#  endif
+#endif
+
 #include "adafruit/bbio/error.h"
 
 #define MODE_UNKNOWN -1
@@ -80,6 +87,8 @@ BBIO_err unload_device_tree(const char *name);
 int device_tree_loaded(const char *name);
 BBIO_err get_pwm_by_key(const char *key, pwm_t **pwm);
 
+#define BBIO_LOG_OPTION LOG_CONS | LOG_PID | LOG_NDELAY
+void initlog(int level, const char* ident, int option);
 
 int setup_error;
 int module_setup;

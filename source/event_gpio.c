@@ -28,13 +28,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
-#include <sys/epoll.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <string.h>
+#include <sys/epoll.h>
+#include <syslog.h>
+#include <unistd.h>
+
 #include "event_gpio.h"
 #include "common.h"
 
@@ -73,27 +76,37 @@ int event_occurred[120] = { 0 };
 int thread_running = 0;
 int epfd = -1;
 
-int gpio_export(unsigned int gpio)
+BBIO_err gpio_export(unsigned int gpio)
 {
     int fd, len;
     char str_gpio[10];
     struct gpio_exp *new_gpio, *g;
 
-    if ((fd = open("/sys/class/gpio/export", O_WRONLY)) < 0)
+#define GPIO_EXPORT "/sys/class/gpio/export"
+
+    if ((fd = open(GPIO_EXPORT, O_WRONLY)) < 0)
     {
-        return -1;
+        syslog(LOG_ERR, "gpio_export: %u couldn't open '"GPIO_EXPORT"': %i-%s",
+               gpio, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
+
     len = snprintf(str_gpio, sizeof(str_gpio), "%d", gpio);
     int ret = write(fd, str_gpio, len);
     close(fd);
     if (ret < 0) {
-    	return ret;
+        syslog(LOG_ERR, "gpio_export: %u couldn't write '"GPIO_EXPORT"': %i-%s",
+               gpio, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
 
     // add to list
     new_gpio = malloc(sizeof(struct gpio_exp));
-    if (new_gpio == 0)
-        return -1; // out of memory
+    if (new_gpio == 0) {
+        syslog(LOG_ERR, "gpio_export: %u couldn't malloc 'gpio_exp': %i-%s",
+               gpio, errno, strerror(errno));
+        return BBIO_MEM;
+    }
 
     new_gpio->gpio = gpio;
     new_gpio->next = NULL;
@@ -109,7 +122,9 @@ int gpio_export(unsigned int gpio)
             g = g->next;
         g->next = new_gpio;
     }
-    return 0;
+
+    syslog(LOG_DEBUG, "gpio_export: %u OK", gpio);
+    return BBIO_OK;
 }
 
 void close_value_fd(unsigned int gpio)
@@ -183,13 +198,15 @@ int open_value_file(unsigned int gpio)
     }
 
     if ((fd = open(filename, O_RDONLY | O_NONBLOCK)) < 0) {
-       return -1;
+        syslog(LOG_ERR, "gpio open_value_file: %u couldn't open '%s': %i-%s",
+               gpio, filename, errno, strerror(errno));
+        return -1;
     }
     add_fd_list(gpio, fd);
     return fd;
 }
 
-int gpio_unexport(unsigned int gpio)
+BBIO_err gpio_unexport(unsigned int gpio)
 {
     int fd, len;
     char str_gpio[10];
@@ -197,14 +214,21 @@ int gpio_unexport(unsigned int gpio)
 
     close_value_fd(gpio);
 
-    if ((fd = open("/sys/class/gpio/unexport", O_WRONLY)) < 0)
-        return -1;
+#define GPIO_UNEXPORT "/sys/class/gpio/unexport"
+
+    if ((fd = open(GPIO_UNEXPORT, O_WRONLY)) < 0) {
+      syslog(LOG_ERR, "gpio_unexport: %u couldn't open '"GPIO_UNEXPORT"': %i-%s",
+             gpio, errno, strerror(errno));
+      return BBIO_SYSFS;
+    }
 
     len = snprintf(str_gpio, sizeof(str_gpio), "%d", gpio);
     int ret = write(fd, str_gpio, len);
     close(fd);
     if (ret < 0) {
-    	return ret;
+      syslog(LOG_ERR, "gpio_unexport: %u couldn't write '"GPIO_UNEXPORT"': %i-%s",
+             gpio, errno, strerror(errno));
+      return BBIO_SYSFS;
     }
 
     // remove from list
@@ -225,22 +249,28 @@ int gpio_unexport(unsigned int gpio)
             g = g->next;
         }
     }
-        return 0;
+
+    syslog(LOG_DEBUG, "gpio_unexport: %u OK", gpio);
+    return BBIO_OK;
 }
 
-int gpio_set_direction(unsigned int gpio, unsigned int in_flag)
+BBIO_err gpio_set_direction(unsigned int gpio, unsigned int in_flag)
 {
         int fd;
         char filename[40];
         char direction[10] = { 0 };
 
         if ((gpio >= USR_LED_GPIO_MIN) && (gpio <=  USR_LED_GPIO_MAX)) {
-            return 0; // direction is not applicable to the USR LED pins
+            syslog(LOG_DEBUG, "gpio_set_direction: %u not applicable to the USR LED", gpio);
+            return BBIO_OK; // direction is not applicable to the USR LED pins
         }
 
         snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/direction", gpio);
-        if ((fd = open(filename, O_WRONLY)) < 0)
-            return -1;
+        if ((fd = open(filename, O_WRONLY)) < 0) {
+            syslog(LOG_ERR, "gpio_set_direction: %u couldn't open '%s': %i-%s",
+                   gpio, filename, errno, strerror(errno));
+            return BBIO_SYSFS;
+        }
 
         if (in_flag) {
             strncpy(direction, "out", ARRAY_SIZE(direction) - 1);
@@ -251,26 +281,34 @@ int gpio_set_direction(unsigned int gpio, unsigned int in_flag)
         int ret = write(fd, direction, strlen(direction));
         close(fd);
         if (ret < 0) {
-        	return ret;
+            syslog(LOG_ERR, "gpio_set_direction: %u couldn't write '%s': %i-%s",
+                   gpio, filename, errno, strerror(errno));
+            return BBIO_SYSFS;
         }
 
-        return 0;
+        syslog(LOG_DEBUG, "gpio_set_direction: %u OK", gpio);
+        return BBIO_OK;
 }
 
-int gpio_get_direction(unsigned int gpio, unsigned int *value)
+BBIO_err gpio_get_direction(unsigned int gpio, unsigned int *value)
 {
     int fd;
     char direction[4] = { 0 };
     char filename[40];
 
     snprintf(filename, sizeof(filename), "/sys/class/gpio/gpio%d/direction", gpio);
-    if ((fd = open(filename, O_RDONLY | O_NONBLOCK)) < 0)
-        return -1;
+    if ((fd = open(filename, O_RDONLY | O_NONBLOCK)) < 0) {
+        syslog(LOG_ERR, "gpio_get_direction: %u couldn't open '%s': %i-%s",
+               gpio, filename, errno, strerror(errno));
+        return BBIO_SYSFS;
+    }
 
     lseek(fd, 0, SEEK_SET);
     int ret = read(fd, &direction, sizeof(direction) - 1);
     if (ret < 0) {
-    	return ret;
+        syslog(LOG_ERR, "gpio_get_direction: %u couldn't read '%s': %i-%s",
+               gpio, filename, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
 
     if (strcmp(direction, "out") == 0) {
@@ -278,11 +316,12 @@ int gpio_get_direction(unsigned int gpio, unsigned int *value)
     } else {
         *value = INPUT;
     }
- 
-    return 0;
+
+    syslog(LOG_DEBUG, "gpio_get_direction: %u OK", gpio);
+    return BBIO_OK;
 }
 
-int gpio_set_value(unsigned int gpio, unsigned int value)
+BBIO_err gpio_set_value(unsigned int gpio, unsigned int value)
 {
     int fd;
     char filename[MAX_FILENAME];
@@ -304,7 +343,9 @@ int gpio_set_value(unsigned int gpio, unsigned int value)
     }
 
     if ((fd = open(filename, O_WRONLY)) < 0) {
-        return -1;
+        syslog(LOG_ERR, "gpio_set_value: %u couldn't open '%s': %i-%s",
+               gpio, filename, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
 
     if (value) {
@@ -316,27 +357,35 @@ int gpio_set_value(unsigned int gpio, unsigned int value)
     int ret = write(fd, vstr, strlen(vstr));
     close(fd);
     if (ret < 0) {
-    	return ret;
+        syslog(LOG_ERR, "gpio_set_value: %u couldn't write '%s': %i-%s",
+               gpio, filename, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
 
-    return 0;
+    syslog(LOG_DEBUG, "gpio_set_value: %u %u OK", gpio, value);
+    return BBIO_OK;
 }
 
-int gpio_get_value(unsigned int gpio, unsigned int *value)
+BBIO_err gpio_get_value(unsigned int gpio, unsigned int *value)
 {
     int fd = fd_lookup(gpio);
     char ch;
 
     if (!fd)
     {
-        if ((fd = open_value_file(gpio)) == -1)
-            return -1;
+        if ((fd = open_value_file(gpio)) == -1) {
+            syslog(LOG_ERR, "gpio_set_value: %u couldn't open value file: %i-%s",
+                   gpio, errno, strerror(errno));
+            return BBIO_SYSFS;
+        }
     }
 
     lseek(fd, 0, SEEK_SET);
     int ret = read(fd, &ch, sizeof(ch));
     if (ret < 0) {
-    	return ret;
+        syslog(LOG_ERR, "gpio_set_value: %u couldn't read value file: %i-%s",
+               gpio, errno, strerror(errno));
+        return BBIO_SYSFS;
     }
 
     if (ch != '0') {
@@ -345,7 +394,8 @@ int gpio_get_value(unsigned int gpio, unsigned int *value)
         *value = 0;
     }
 
-    return 0;
+    syslog(LOG_DEBUG, "gpio_get_value: %u OK", gpio);
+    return BBIO_OK;
 }
 
 int gpio_set_edge(unsigned int gpio, unsigned int edge)

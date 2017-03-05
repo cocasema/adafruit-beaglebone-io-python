@@ -32,16 +32,18 @@ SOFTWARE.
 
 #include "Python.h"
 #include <dirent.h>
+#include <syslog.h>
 #include <time.h>
 #include <string.h>
 #include <glob.h>
 #include "common.h"
 
-#include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0)
-#  ifndef BBBVERSION41
-#    define BBBVERSION41
-#  endif
+#ifdef BBBVERSION41
+char ctrl_dir[43];
+char ocp_dir[33];
+#else
+char ctrl_dir[35];
+char ocp_dir[25];
 #endif
 
 int setup_error = 0;
@@ -537,4 +539,19 @@ BBIO_err unload_device_tree(const char *name)
     fclose(file);
 
     return BBIO_OK;
+}
+
+void initlog(int level, const char* ident, int option)
+{
+  static int initialized = 0;
+  if (initialized) return;
+
+  setlogmask(LOG_UPTO(level));
+  if (option == -1) {
+    option = BBIO_LOG_OPTION;
+  }
+  openlog(ident, option, LOG_LOCAL1);
+  syslog(LOG_NOTICE, "libadafruit-bbio version %s initialized", "<unknown>");
+
+  initialized = 1;
 }

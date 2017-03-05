@@ -131,7 +131,7 @@ static PyObject *py_setup_channel(__attribute__ ((unused)) PyObject *self, PyObj
 
        // Set the pin value and bail if we get an error.
        res = gpio_set_value(gpio, initial);
-       if(res != 0) {
+       if (res != BBIO_OK) {
            PyErr_SetString(PyExc_ValueError, "Set gpio value failed, missing file or invalid permissions.");
            return NULL;
        }
