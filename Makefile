@@ -62,6 +62,9 @@ cpp-clean:
 	 m4/ltsugar.m4 \
 	 m4/ltversion.m4
 
+format:
+	for mask in '*.h' '*.c' '*.cpp'; do find . -name $$mask -exec clang-format -i {} \+; done
+
 .PHONY: all clean
 .PHONY: tests
 .PHONY: build  install
