@@ -26,10 +26,10 @@ SOFTWARE.
 #include "common.h"
 #include "c_uart.h"
 
-const char *valid_uarts[4] = {"UART1", "UART2", "UART4", "UART5"};
+const char *valid_uarts[4] = { "UART1", "UART2", "UART4", "UART5" };
 
 // python function cleanup()
-static PyObject *py_cleanup(__attribute__ ((unused)) PyObject *self, __attribute__ ((unused)) PyObject *args)
+static PyObject *py_cleanup(__attribute__((unused)) PyObject *self, __attribute__((unused)) PyObject *args)
 {
     // unexport the UART
     uart_cleanup();
@@ -38,7 +38,7 @@ static PyObject *py_cleanup(__attribute__ ((unused)) PyObject *self, __attribute
 }
 
 // python function setup()
-static PyObject *py_setup_uart(__attribute__ ((unused)) PyObject *self, PyObject *args)
+static PyObject *py_setup_uart(__attribute__((unused)) PyObject *self, PyObject *args)
 {
     char dt[FILENAME_BUFFER_SIZE];
     char *channel;
@@ -58,7 +58,7 @@ static PyObject *py_setup_uart(__attribute__ ((unused)) PyObject *self, PyObject
     err = uart_setup(dt);
     if (err != BBIO_OK) {
         PyErr_SetString(PyExc_RuntimeError, "Unable to export UART channel.");
-        return NULL;        
+        return NULL;
     }
 
     Py_RETURN_NONE;
@@ -67,18 +67,18 @@ static PyObject *py_setup_uart(__attribute__ ((unused)) PyObject *self, PyObject
 static const char moduledocstring[] = "UART functionality of a BeagleBone using Python";
 
 PyMethodDef uart_methods[] = {
-    {"setup", py_setup_uart, METH_VARARGS, "Set up and start the UART channel."},
-    {"cleanup", py_cleanup, METH_VARARGS, "Clean up UART."},
+    { "setup", py_setup_uart, METH_VARARGS, "Set up and start the UART channel." },
+    { "cleanup", py_cleanup, METH_VARARGS, "Clean up UART." },
     //{"setwarnings", py_setwarnings, METH_VARARGS, "Enable or disable warning messages"},
-    {NULL, NULL, 0, NULL}
+    { NULL, NULL, 0, NULL }
 };
 
 #if PY_MAJOR_VERSION > 2
 static struct PyModuleDef bbuartmodule = {
     PyModuleDef_HEAD_INIT,
-    "UART",       // name of module
-    moduledocstring,  // module documentation, may be NULL
-    -1,               // size of per-interpreter state of the module, or -1 if the module keeps state in global variables.
+    "UART", // name of module
+    moduledocstring, // module documentation, may be NULL
+    -1, // size of per-interpreter state of the module, or -1 if the module keeps state in global variables.
     uart_methods
 };
 #endif
@@ -93,14 +93,13 @@ PyMODINIT_FUNC initUART(void)
 
 #if PY_MAJOR_VERSION > 2
     if ((module = PyModule_Create(&bbuartmodule)) == NULL)
-       return NULL;
+        return NULL;
 #else
     if ((module = Py_InitModule3("UART", uart_methods, moduledocstring)) == NULL)
-       return;
+        return;
 #endif
 
-   define_constants(module);
-
+    define_constants(module);
 
 #if PY_MAJOR_VERSION > 2
     return module;

@@ -30,14 +30,12 @@ namespace bbio {
 class Gpio
 {
 public:
-    enum class Direction
-    {
+    enum class Direction {
         Input = 0,
         Output = 1
     };
 
-    enum class Value
-    {
+    enum class Value {
         Low = 0,
         High = 1
     };

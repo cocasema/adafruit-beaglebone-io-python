@@ -32,26 +32,26 @@ SOFTWARE.
 
 #include "adafruit/bbio/error.h"
 
-#define NO_EDGE      0
-#define RISING_EDGE  1
+#define NO_EDGE 0
+#define RISING_EDGE 1
 #define FALLING_EDGE 2
-#define BOTH_EDGE    3
+#define BOTH_EDGE 3
 
-#define INPUT  0
+#define INPUT 0
 #define OUTPUT 1
-#define ALT0   4
+#define ALT0 4
 
 #define HIGH 1
-#define LOW  0
+#define LOW 0
 
 #define MAX_FILENAME 60
 
 #define USR_LED_GPIO_MIN 53
 #define USR_LED_GPIO_MAX 56
 
-#define PUD_OFF  0
+#define PUD_OFF 0
 #define PUD_DOWN 1
-#define PUD_UP   2
+#define PUD_UP 2
 
 BBIO_err gpio_export(unsigned int gpio);
 BBIO_err gpio_unexport(unsigned int gpio);

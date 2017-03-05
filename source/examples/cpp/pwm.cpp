@@ -31,7 +31,7 @@ int main(int /*argc*/, char** /*argv*/)
     using adafruit::bbio::Pwm;
     using namespace std::chrono_literals;
 
-    adafruit::bbio::init({LOG_DEBUG, nullptr, LOG_PERROR});
+    adafruit::bbio::init({ LOG_DEBUG, nullptr, LOG_PERROR });
 
     Pwm pwm("P8_19");
     pwm.start(0., 1e9 / (1 * 1000 * 1000), Pwm::Polarity::Normal);

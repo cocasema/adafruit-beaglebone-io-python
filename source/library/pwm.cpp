@@ -35,7 +35,8 @@ namespace bbio {
  */
 Pwm::Pwm(std::string const& key)
     : key_(key)
-{}
+{
+}
 
 Pwm::~Pwm()
 {
@@ -44,29 +45,28 @@ Pwm::~Pwm()
 
 void Pwm::start(float duty_cycle, float frequency, Polarity polarity)
 {
-    (CheckError)pwm_start(key_.c_str(), duty_cycle, frequency, (int)polarity);
+    (CheckError) pwm_start(key_.c_str(), duty_cycle, frequency, (int)polarity);
 }
 
 void Pwm::stop()
 {
-    (CheckError)pwm_disable(key_.c_str());
+    (CheckError) pwm_disable(key_.c_str());
 }
 
 void Pwm::set_duty_cycle(float duty_cycle)
 {
-    (CheckError)pwm_set_duty_cycle(key_.c_str(), duty_cycle);
+    (CheckError) pwm_set_duty_cycle(key_.c_str(), duty_cycle);
 }
 
 void Pwm::set_frequency(float frequency)
 {
-    (CheckError)pwm_set_frequency(key_.c_str(), frequency);
+    (CheckError) pwm_set_frequency(key_.c_str(), frequency);
 }
 
 void Pwm::set_polarity(Polarity polarity)
 {
-    (CheckError)pwm_set_polarity(key_.c_str(), (int)polarity);
+    (CheckError) pwm_set_polarity(key_.c_str(), (int)polarity);
 }
 
 } // namespace bbio
 } // namespace adafruit
-

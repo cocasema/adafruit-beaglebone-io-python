@@ -34,10 +34,10 @@ SOFTWARE.
 #include <stddef.h>
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,1,0)
-#  ifndef BBBVERSION41
-#    define BBBVERSION41
-#  endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
+#ifndef BBBVERSION41
+#define BBBVERSION41
+#endif
 #endif
 
 #include "adafruit/bbio/error.h"
@@ -46,37 +46,38 @@ using adafruit::bbio::BBIO_err;
 #endif
 
 #define MODE_UNKNOWN -1
-#define BOARD        10
-#define BCM          11
+#define BOARD 10
+#define BCM 11
 
-#define ARRAY_SIZE(a)  (sizeof(a) / sizeof(a[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 #define FILENAME_BUFFER_SIZE 128
 #define MAX_PATH 256
 
 // Modeled after "pwm": submap in bone.js from bonescript
 // https://github.com/jadonk/bonescript/blob/master/src/bone.js#L680
-typedef struct pwm_t {
-  const char *module;
-  const int sysfs;
-  const int index;
-  const int muxmode;
-  const char *path;
-  const char *name;
-  const char *chip;
-  const char *addr;
-  const char *key;  // Pin name eg P9_21
+typedef struct pwm_t
+{
+    const char *module;
+    const int sysfs;
+    const int index;
+    const int muxmode;
+    const char *path;
+    const char *name;
+    const char *chip;
+    const char *addr;
+    const char *key; // Pin name eg P9_21
 } pwm_t;
 
 extern int gpio_mode;
 extern int gpio_direction[120];
 
 #ifdef BBBVERSION41
-  extern char ctrl_dir[43];
-  extern char ocp_dir[33];
+extern char ctrl_dir[43];
+extern char ocp_dir[33];
 #else
-  extern char ctrl_dir[35];
-  extern char ocp_dir[25];
+extern char ctrl_dir[35];
+extern char ocp_dir[25];
 #endif
 
 BBIO_err get_gpio_number(const char *key, unsigned int *gpio);
@@ -91,7 +92,7 @@ int device_tree_loaded(const char *name);
 BBIO_err get_pwm_by_key(const char *key, pwm_t **pwm);
 
 #define BBIO_LOG_OPTION LOG_CONS | LOG_PID | LOG_NDELAY
-void initlog(int level, const char* ident, int option);
+void initlog(int level, const char *ident, int option);
 
 extern int setup_error;
 extern int module_setup;

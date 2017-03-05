@@ -32,13 +32,13 @@ namespace bbio {
 #endif // __cplusplus
 
 typedef enum {
-	BBIO_OK, // No error
-	BBIO_ACCESS, // Error accessing a file
-	BBIO_SYSFS, // Some error with Sysfs files
-	BBIO_CAPE, // some error with capes
-	BBIO_INVARG, // Invalid argument
-	BBIO_MEM,
-	BBIO_GEN // General error
+    BBIO_OK, // No error
+    BBIO_ACCESS, // Error accessing a file
+    BBIO_SYSFS, // Some error with Sysfs files
+    BBIO_CAPE, // some error with capes
+    BBIO_INVARG, // Invalid argument
+    BBIO_MEM,
+    BBIO_GEN // General error
 } BBIO_err;
 
 #ifdef __cplusplus
@@ -48,11 +48,13 @@ class BBIOError : public std::runtime_error
 public:
     BBIOError(BBIO_err code, std::string const& message = "")
         : std::runtime_error(
-                std::to_string(code) + "-" + to_c_str(code) + " " + message)
-    {}
+              std::to_string(code) + "-" + to_c_str(code) + " " + message)
+    {
+    }
 
     static char const* to_c_str(BBIO_err err)
     {
+        // clang-format off
         switch (err) {
             case BBIO_OK:     return "OK";
             case BBIO_ACCESS: return "ACCESS";
@@ -63,6 +65,7 @@ public:
             case BBIO_GEN:    return "GENERAL";
             default:          return "<INVALID>";
         }
+        // clang-format on
     }
 };
 

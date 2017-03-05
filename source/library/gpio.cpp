@@ -41,14 +41,14 @@ Gpio::Gpio(std::string const& key, Direction direction)
     : key_(key)
     , pin_(0)
 {
-    (CheckError)get_gpio_number(key_.c_str(), &pin_);
-    /*(CheckError)*/gpio_export(pin_);
+    (CheckError) get_gpio_number(key_.c_str(), &pin_);
+    /*(CheckError)*/ gpio_export(pin_);
 
-    timespec ts[] = {{0, 1 * 1000000}};
+    timespec ts[] = { { 0, 1 * 1000000 } };
     nanosleep(ts, NULL);
 
     if (direction == Direction::Input) {
-        (CheckError)set_pin_mode(key_.c_str(), "gpio");
+        (CheckError) set_pin_mode(key_.c_str(), "gpio");
     }
 }
 
@@ -61,12 +61,12 @@ Gpio::~Gpio()
 
 void Gpio::set_direction(Direction direction)
 {
-    (CheckError)gpio_set_direction(pin_, (uint32_t)direction);
+    (CheckError) gpio_set_direction(pin_, (uint32_t)direction);
 }
 
 void Gpio::set_value(Value value)
 {
-    (CheckError)gpio_set_value(pin_, (uint32_t)value);
+    (CheckError) gpio_set_value(pin_, (uint32_t)value);
 }
 
 } // namespace bbio

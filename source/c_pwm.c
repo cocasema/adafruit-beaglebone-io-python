@@ -46,7 +46,7 @@ int pwm_initialized = 0;
 // pwm exports
 struct pwm_exp
 {
-    char key[KEYLEN+1]; /* leave room for terminating NUL byte */
+    char key[KEYLEN + 1]; /* leave room for terminating NUL byte */
     int period_fd;
     int duty_fd;
     int polarity_fd;
@@ -64,8 +64,7 @@ struct pwm_exp *lookup_exported_pwm(const char *key)
 {
     struct pwm_exp *pwm = exported_pwms;
 
-    while (pwm != NULL)
-    {
+    while (pwm != NULL) {
         if (strcmp(pwm->key, key) == 0) {
             return pwm;
         }
@@ -81,8 +80,7 @@ void export_pwm(struct pwm_exp *new_pwm)
 {
     struct pwm_exp *pwm;
 
-    if (exported_pwms == NULL)
-    {
+    if (exported_pwms == NULL) {
         // create new list
         exported_pwms = new_pwm;
     } else {
@@ -96,15 +94,14 @@ void export_pwm(struct pwm_exp *new_pwm)
 
 BBIO_err initialize_pwm(void)
 {
-#ifdef BBBVERSION41  // don't load overlay in 4.1+
+#ifdef BBBVERSION41 // don't load overlay in 4.1+
     if (!pwm_initialized) {
         strncpy(ocp_dir, "/sys/devices/platform/ocp", sizeof(ocp_dir));
 #else
     BBIO_err err;
-    if  (!pwm_initialized && load_device_tree("am33xx_pwm")) {
+    if (!pwm_initialized && load_device_tree("am33xx_pwm")) {
         err = build_path("/sys/devices", "ocp", ocp_dir, sizeof(ocp_dir));
-        if (err != BBIO_OK)
-        {
+        if (err != BBIO_OK) {
             return BBIO_SYSFS;
         }
 #endif
@@ -117,7 +114,8 @@ BBIO_err initialize_pwm(void)
     return BBIO_OK;
 }
 
-BBIO_err pwm_set_frequency(const char *key, float freq) {
+BBIO_err pwm_set_frequency(const char *key, float freq)
+{
     int len;
     char buffer[20];
     unsigned long period_ns;
@@ -193,7 +191,8 @@ BBIO_err pwm_set_frequency(const char *key, float freq) {
 }
 
 // Only works before chip is enabled
-BBIO_err pwm_set_polarity(const char *key, int polarity) {
+BBIO_err pwm_set_polarity(const char *key, int polarity)
+{
     int len;
     char buffer[9]; /* allow room for trailing NUL byte */
     struct pwm_exp *pwm;
@@ -208,11 +207,11 @@ BBIO_err pwm_set_polarity(const char *key, int polarity) {
         return BBIO_GEN;
     }
 
-    // polarity can't be changed with enabled.
+// polarity can't be changed with enabled.
 #ifdef BBBVERSION41
     // Read the current enabled status
     len = 1;
-    memset(buffer, 0, 9);  // Initialize buffer
+    memset(buffer, 0, 9); // Initialize buffer
     lseek(pwm->enable_fd, 0, SEEK_SET);
     if (read(pwm->enable_fd, buffer, len) < 0) {
         syslog(LOG_ERR, "pwm_set_polarity: %s couldn't read enable: %i-%s",
@@ -256,7 +255,7 @@ BBIO_err pwm_set_polarity(const char *key, int polarity) {
         return BBIO_SYSFS;
     }
 
-    /* If we were enabled before, restore state */
+/* If we were enabled before, restore state */
 #ifdef BBBVERSION41
     if (enabled) {
         lseek(pwm->enable_fd, 0, SEEK_SET);
@@ -273,7 +272,8 @@ BBIO_err pwm_set_polarity(const char *key, int polarity) {
     return BBIO_OK;
 }
 
-BBIO_err pwm_set_duty_cycle(const char *key, float duty) {
+BBIO_err pwm_set_duty_cycle(const char *key, float duty)
+{
     int len;
     char buffer[20];
     struct pwm_exp *pwm;
@@ -303,7 +303,7 @@ BBIO_err pwm_set_duty_cycle(const char *key, float duty) {
     return BBIO_OK;
 }
 
-BBIO_err pwm_setup(const char *key, __attribute__ ((unused)) float duty, __attribute__ ((unused)) float freq, __attribute__ ((unused)) int polarity)
+BBIO_err pwm_setup(const char *key, __attribute__((unused)) float duty, __attribute__((unused)) float freq, __attribute__((unused)) int polarity)
 {
     BBIO_err err;
     struct pwm_exp *new_pwm;
@@ -335,23 +335,23 @@ BBIO_err pwm_setup(const char *key, __attribute__ ((unused)) float duty, __attri
     }
 
     // Make sure that one of the universal capes is loaded
-    if (!( device_tree_loaded("cape-univ-audio") // from cdsteinkuehler/beaglebone-universal-io
-        || device_tree_loaded("cape-univ-emmc")  // ""
-        || device_tree_loaded("cape-univ-hdmi")  // ""
-        || device_tree_loaded("cape-universal")  // ""
-        || device_tree_loaded("cape-universala") // ""
-        || device_tree_loaded("cape-universaln") // ""
-        || device_tree_loaded("univ-all")        // from latest BeagleBone Debian 8 images
-        || device_tree_loaded("univ-bbgw")       // ""
-        || device_tree_loaded("univ-emmc")       // ""
-        || device_tree_loaded("univ-hdmi")       // ""
-        || device_tree_loaded("univ-nhdmi")))    // ""
+    if (!(device_tree_loaded("cape-univ-audio") // from cdsteinkuehler/beaglebone-universal-io
+          || device_tree_loaded("cape-univ-emmc") // ""
+          || device_tree_loaded("cape-univ-hdmi") // ""
+          || device_tree_loaded("cape-universal") // ""
+          || device_tree_loaded("cape-universala") // ""
+          || device_tree_loaded("cape-universaln") // ""
+          || device_tree_loaded("univ-all") // from latest BeagleBone Debian 8 images
+          || device_tree_loaded("univ-bbgw") // ""
+          || device_tree_loaded("univ-emmc") // ""
+          || device_tree_loaded("univ-hdmi") // ""
+          || device_tree_loaded("univ-nhdmi"))) // ""
     {
         syslog(LOG_ERR, "pwm_setup: %s no suitable cape loaded", key);
         return BBIO_CAPE;
     }
     // Do pinmuxing
-    if(!strcmp(key, "P9_28")) {
+    if (!strcmp(key, "P9_28")) {
         // ecap2 (P9_28) requires mode pwm2
         // based on bonescript commit 23bf443 by Matthew West
         strncpy(pin_mode, "pwm2", PIN_MODE_LEN);
@@ -521,7 +521,7 @@ BBIO_err pwm_setup(const char *key, __attribute__ ((unused)) float duty, __attri
         return BBIO_MEM; // out of memory
     }
 
-    strncpy(new_pwm->key, key, KEYLEN);  /* can leave string unterminated */
+    strncpy(new_pwm->key, key, KEYLEN); /* can leave string unterminated */
     new_pwm->key[KEYLEN] = '\0'; /* terminate string */
     new_pwm->period_fd = period_fd;
     new_pwm->duty_fd = duty_fd;
@@ -572,7 +572,7 @@ BBIO_err pwm_start(const char *key, float duty, float freq, int polarity)
 
     // Read out current period_ns from the file, in order for it to behave
     // properly
-    memset(buffer, 0, sizeof(buffer));  // Initialize buffer
+    memset(buffer, 0, sizeof(buffer)); // Initialize buffer
     lseek(pwm->period_fd, 0, SEEK_SET);
     len = read(pwm->period_fd, buffer, sizeof(buffer));
     if (len < 0) {
@@ -620,7 +620,7 @@ BBIO_err pwm_start(const char *key, float duty, float freq, int polarity)
         return err;
     }
 
-#ifdef BBBVERSION41  // Enable the PWM (don't think it's necessary before 4.1+)
+#ifdef BBBVERSION41 // Enable the PWM (don't think it's necessary before 4.1+)
     if (pwm == NULL) {
         return BBIO_GEN;
     }
@@ -637,7 +637,6 @@ BBIO_err pwm_start(const char *key, float duty, float freq, int polarity)
     return BBIO_OK;
 }
 
-
 BBIO_err pwm_disable(const char *key)
 {
     struct pwm_exp *pwm, *temp, *prev_pwm = NULL;
@@ -653,26 +652,24 @@ BBIO_err pwm_disable(const char *key)
 
     // remove from list
     pwm = exported_pwms;
-    while (pwm != NULL)
-    {
-        if (strcmp(pwm->key, key) == 0)
-        {
+    while (pwm != NULL) {
+        if (strcmp(pwm->key, key) == 0) {
 
 #ifdef BBBVERSION41
-	        char buffer[2];
-	        size_t len;
+            char buffer[2];
+            size_t len;
 
-	        // Disable the PWM
-	        lseek(pwm->enable_fd, 0, SEEK_SET);
-	        len = snprintf(buffer, sizeof(buffer), "0");
-	        if (write(pwm->enable_fd, buffer, len) < 0) {
-	          syslog(LOG_ERR, "pwm_disable: %s couldn't write enable: %i-%s",
-	                 key, errno, strerror(errno));
-		        return BBIO_SYSFS;
-	        }
+            // Disable the PWM
+            lseek(pwm->enable_fd, 0, SEEK_SET);
+            len = snprintf(buffer, sizeof(buffer), "0");
+            if (write(pwm->enable_fd, buffer, len) < 0) {
+                syslog(LOG_ERR, "pwm_disable: %s couldn't write enable: %i-%s",
+                       key, errno, strerror(errno));
+                return BBIO_SYSFS;
+            }
 
-	        // Unexport the PWM
-	        // TODO later
+// Unexport the PWM
+// TODO later
 #endif
 
             //close the fd
@@ -680,8 +677,7 @@ BBIO_err pwm_disable(const char *key)
             close(pwm->duty_fd);
             close(pwm->polarity_fd);
 
-            if (prev_pwm == NULL)
-            {
+            if (prev_pwm == NULL) {
                 exported_pwms = pwm->next;
                 prev_pwm = pwm;
             } else {

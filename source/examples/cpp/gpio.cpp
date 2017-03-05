@@ -31,7 +31,7 @@ int main(int /*argc*/, char** /*argv*/)
     using adafruit::bbio::Gpio;
     using namespace std::chrono_literals;
 
-    adafruit::bbio::init({LOG_DEBUG, nullptr, LOG_PERROR});
+    adafruit::bbio::init({ LOG_DEBUG, nullptr, LOG_PERROR });
 
     Gpio gpio("P8_12", Gpio::Direction::Output);
 

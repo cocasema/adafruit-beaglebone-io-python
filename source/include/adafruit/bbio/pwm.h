@@ -30,8 +30,7 @@ namespace bbio {
 class Pwm
 {
 public:
-    enum class Polarity
-    {
+    enum class Polarity {
         Normal = 0,
         Inversed = 1,
     };

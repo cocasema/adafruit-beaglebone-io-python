@@ -31,9 +31,9 @@ SOFTWARE.
 #include "common.h"
 
 #ifdef BBBVERSION41
-    char adc_prefix_dir[49];
+char adc_prefix_dir[49];
 #else
-    char adc_prefix_dir[40];
+char adc_prefix_dir[40];
 #endif
 
 int adc_initialized = 0;
@@ -91,7 +91,7 @@ BBIO_err initialize_adc(void)
 
 BBIO_err read_value(unsigned int ain, float *value)
 {
-    FILE * fh;
+    FILE *fh;
 #ifdef BBBVERSION41
     char ain_path[49];
     snprintf(ain_path, sizeof(ain_path), "%s%d_raw", adc_prefix_dir, ain);
@@ -100,17 +100,16 @@ BBIO_err read_value(unsigned int ain, float *value)
     snprintf(ain_path, sizeof(ain_path), "%s%d", adc_prefix_dir, ain);
 #endif
 
-    int err, try_count=0;
+    int err, try_count = 0;
     int read_successful;
-    
+
     read_successful = 0;
 
     // Workaround to AIN bug where reading from more than one AIN would cause access failures
-    while (!read_successful && try_count < 3)
-    {
+    while (!read_successful && try_count < 3) {
         fh = fopen(ain_path, "r");
 
-        // Likely a bad path to the ocp device driver 
+        // Likely a bad path to the ocp device driver
         if (!fh) {
             return BBIO_SYSFS;
         }
@@ -118,13 +117,15 @@ BBIO_err read_value(unsigned int ain, float *value)
         fseek(fh, 0, SEEK_SET);
         err = fscanf(fh, "%f", value);
 
-        if (err != EOF) read_successful = 1;
+        if (err != EOF)
+            read_successful = 1;
         fclose(fh);
 
         try_count++;
     }
 
-    if (read_successful) return BBIO_OK;
+    if (read_successful)
+        return BBIO_OK;
 
     // Fall through and fail
     return BBIO_GEN;
