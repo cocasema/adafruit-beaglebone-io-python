@@ -55,7 +55,6 @@ SOFTWARE.
 int gpio_mode;
 int gpio_direction[120];
 
-char ctrl_dir[CTRL_DIR_MAX];
 char ocp_dir[OCP_DIR_MAX];
 
 int setup_error = 0;
@@ -437,30 +436,43 @@ int get_spi_bus_path_number(unsigned int spi)
   }
 }
 
-
-BBIO_err load_device_tree(const char *name)
+static FILE* open_slots_file(void)
 {
-    FILE *file = NULL;
 #ifdef BBBVERSION41
-    char slots[41];
-    snprintf(ctrl_dir, sizeof(ctrl_dir), "/sys/devices/platform/bone_capemgr");
+    char slots[] = "/sys/devices/platform/bone_capemgr/slots";
 #else
-     char slots[40];
-     build_path("/sys/devices", "bone_capemgr", ctrl_dir, sizeof(ctrl_dir));
+    char slots[64];
+    if (build_path("/sys/devices", "bone_capemgr", slots, sizeof(slots) != BBIO_OK) {
+        syslog(LOG_ERR, "open_slots_file: couldn't build slots filename");
+        return NULL;
+    }
+
+    int len = strnlen(slots, sizeof(slots));
+    strncpy(slots + len, "/slots", sizeof(slots)-len);
 #endif
 
-    char line[256];
-
-    snprintf(slots, sizeof(slots), "%s/slots", ctrl_dir);
-
-    file = fopen(slots, "r+");
+    FILE *file = fopen(slots, "r+");
     if (!file) {
 #ifndef NO_PYTHON
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
+#else
+        syslog(LOG_ERR, "open_slots_file: couldn't open %s: %i-%s",
+               slots, errno, strerror(errno));
 #endif // !NO_PYTHON
+        return NULL;
+    }
+
+    return file;
+}
+
+BBIO_err load_device_tree(const char *name)
+{
+    FILE *file = open_slots_file();
+    if (!file) {
         return BBIO_CAPE;
     }
 
+    char line[256];
     while (fgets(line, sizeof(line), file)) {
         //the device is already loaded, return 1
         if (strstr(line, name)) {
@@ -483,27 +495,12 @@ BBIO_err load_device_tree(const char *name)
 // Returns 1 if so, 0 if not, and <0 if error
 int device_tree_loaded(const char *name)
 {
-    FILE *file = NULL;
-#ifdef BBBVERSION41
-    char slots[41];
-    snprintf(ctrl_dir, sizeof(ctrl_dir), "/sys/devices/platform/bone_capemgr");
-#else
-    char slots[40];
-    build_path("/sys/devices", "bone_capemgr", ctrl_dir, sizeof(ctrl_dir));
-#endif
-    char line[256];
-
-    snprintf(slots, sizeof(slots), "%s/slots", ctrl_dir);
-
-
-    file = fopen(slots, "r+");
+    FILE *file = open_slots_file();
     if (!file) {
-#ifndef NO_PYTHON
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
-#endif // !NO_PYTHON
         return -1;
     }
 
+    char line[256];
     while (fgets(line, sizeof(line), file)) {
         //the device is loaded, close file and return true
         if (strstr(line, name)) {
@@ -520,32 +517,18 @@ int device_tree_loaded(const char *name)
 
 BBIO_err unload_device_tree(const char *name)
 {
-    FILE *file = NULL;
-#ifdef BBBVERSION41
-    char slots[41];
-    snprintf(ctrl_dir, sizeof(ctrl_dir), "/sys/devices/platform/bone_capemgr");
-#else
-    char slots[40];
-    build_path("/sys/devices", "bone_capemgr", ctrl_dir, sizeof(ctrl_dir));
-#endif
-    char line[256];
-    char *slot_line;
-
-    snprintf(slots, sizeof(slots), "%s/slots", ctrl_dir);
-    file = fopen(slots, "r+");
+    FILE *file = open_slots_file();
     if (!file) {
-#ifndef NO_PYTHON
-        PyErr_SetFromErrnoWithFilename(PyExc_IOError, slots);
-#endif // !NO_PYTHON
         return BBIO_SYSFS;
     }
 
+    char line[256];
     while (fgets(line, sizeof(line), file)) {
         //the device is loaded, let's unload it
         if (strstr(line, name)) {
-            slot_line = strtok(line, ":");
+            char* slot_line = strtok(line, ":");
             //remove leading spaces
-            while(*slot_line == ' ')
+            while (*slot_line == ' ')
                 slot_line++;
 
             fprintf(file, "-%s", slot_line);
